@@ -166,6 +166,7 @@ docker build -f Dockerfile.ubuntu -t myapp:ubuntu .
 
 > **베이스 이미지가 작다고 최종 이미지가 작은 것이 아니다.** JDK를 빌드 중에 설치하면 +300~400MB가 추가되지만, JDK가 사전 포함된 이미지(temurin, distroless)는 +34~38MB만 증가하며 빌드도 최대 16배 빠르다. 실무에서는 목적에 맞는 전용 이미지를 선택하는 것이 크기·속도·보안 모두에서 유리하다.
 
+---
 
 ## 실무 관점에서의 최적화
  
@@ -212,12 +213,12 @@ docker build -f Dockerfile.ubuntu -t myapp:ubuntu .
 `RUN` 명령어를 `&&`로 하나로 묶으면 레이어 수는 줄지만, **코드 한 줄만 바꿔도 해당 레이어 전체를 재빌드**해야 합니다.
  
 ```dockerfile
-# ❌ 레이어 수는 적지만 캐시 활용 불가
+# 레이어 수는 적지만 캐시 활용 불가
 RUN apt-get update && apt-get install -y curl vim && \
     npm install && \
     npm run build
  
-# ✅ 변경 빈도에 따라 레이어를 분리하여 캐시 최대 활용
+# 변경 빈도에 따라 레이어를 분리하여 캐시 최대 활용
 RUN apt-get update && apt-get install -y curl vim   # 거의 안 바뀜
 RUN npm install                                      # package.json 바뀔 때만
 RUN npm run build                                    # 코드 바뀔 때마다
@@ -234,7 +235,7 @@ RUN npm run build                                    # 코드 바뀔 때마다
  
 ### Step 1. 최악의 초기 이미지
  
-> **목표**: 일단 돌아가기만 하면 됨. 최적화는 전혀 고려하지 않은 상태.
+> **목표**: 최적화는 고려하지 않고 정상 실행 여부만 확인합니다.
 >
 > 로컬에서 미리 빌드한 `.jar` 파일을 그대로 복사해서 실행합니다.
 > 빌드 도구(Gradle), JDK 전체가 포함된 무거운 베이스 이미지를 사용합니다.
@@ -254,9 +255,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 **문제점**
  
 - 런타임에 필요 없는 JDK 전체(컴파일러, 개발 도구 등)가 이미지에 포함됨
-- 빌드를 로컬 환경에 의존 → "내 PC에서는 됩니다" 문제 발생 가능
+- 빌드를 로컬 환경에 의존 → 다른 환경에서 실행 시 문제 발생 가능
 - 빌드 환경(Java 버전, Gradle 버전)이 달라지면 이미지 내용도 달라짐
-- `.dockerignore` 없이 `build/` 디렉터리 전체가 컨텍스트에 포함될 수 있음
  
 **결과**
  
@@ -266,7 +266,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 | 이미지 크기 | 674MB |
  
 <img width="1211" height="593" alt="image" src="https://github.com/user-attachments/assets/c819ff21-458c-4ba3-9172-b6cd877b9a29" />
-<img width="1211" height="593" alt="image" src="https://github.com/user-attachments/assets/63d8f99f-5341-41f4-80dd-8b7c9f46784f" />
+<img width="731" height="224" alt="image" src="https://github.com/user-attachments/assets/5a7eafdf-b96d-4804-93ce-ec2c3b1212b4" />
+
 
  
 ---
@@ -321,7 +322,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
 > **Alpine으로 더 줄이면 안 될까?**
 >
-> Java 생태계에서 `alpine` 기반 JRE 이미지(`eclipse-temurin:17-alpine`)는 `musl libc`를 사용하기 때문에 일부 JVM 네이티브 라이브러리(JNI, 암호화 라이브러리 등)에서 호환성 문제가 발생할 수 있습니다.
+> Java 생태계에서 `alpine` 기반 JRE 이미지는 `musl libc`를 사용하기 때문에 일부 JVM 네이티브 라이브러리(JNI, 암호화 라이브러리 등)에서 호환성 문제가 발생할 수 있습니다.
 > 또한 `alpine`에는 `bash`, `ps`, `curl` 같은 기본 명령어가 없어 컨테이너 진입 후 프로세스 확인조차 어렵습니다.
 >
 > **→ Debian 기반의 `eclipse-temurin:17-jre` 유지. 크기보다 안정성과 디버깅 가능성 우선.**
@@ -337,7 +338,7 @@ COPY . .
 RUN chmod +x gradlew && ./gradlew clean bootJar
  
 # ---- Production Stage ----
-# ✅ alpine 대신 Debian 기반 JRE 유지
+# alpine 대신 Debian 기반 JRE 유지
 #    → bash, curl 등 기본 명령어 사용 가능
 #    → glibc 기반으로 JVM 라이브러리 호환성 확보
 FROM alpine
@@ -386,7 +387,7 @@ WORKDIR /build
  
 COPY . .
  
-# ✅ 권한 부여 + 빌드 + Gradle 캐시 삭제를 하나의 레이어로 처리
+# 권한 부여 + 빌드 + Gradle 캐시 삭제를 하나의 레이어로 처리
 RUN chmod +x gradlew \
     && ./gradlew clean bootJar \
     && rm -rf ~/.gradle/caches
@@ -434,14 +435,14 @@ FROM gradle:8.7-jdk17 AS builder
  
 WORKDIR /build
  
-# ✅ 1단계: 의존성 파일만 먼저 복사 (거의 안 바뀜)
+# 1단계: 의존성 파일만 먼저 복사 (거의 안 바뀜)
 COPY build.gradle settings.gradle gradlew ./
 COPY gradle ./gradle
  
-# ✅ 2단계: 의존성만 미리 다운로드 → 소스 변경 시 이 레이어 캐시 재사용
+# 2단계: 의존성만 미리 다운로드 → 소스 변경 시 이 레이어 캐시 재사용
 RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
  
-# ✅ 3단계: 소스 복사는 마지막에 (자주 바뀌므로)
+# 3단계: 소스 복사는 마지막에 (자주 바뀌므로)
 COPY src ./src
  
 RUN ./gradlew clean bootJar --no-daemon
@@ -483,7 +484,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 <img width="1205" height="289" alt="image" src="https://github.com/user-attachments/assets/1948a637-01a7-4630-8c5b-f1f9959d9a05" />
 <img width="1204" height="287" alt="image" src="https://github.com/user-attachments/assets/269275f5-25f6-451c-9bdb-bc34be40eaf5" />
 
-<img width="1205" height="289" alt="image" src="https://github.com/user-attachments/assets/0efe03ca-f5dc-479a-b600-5a97deb181ee" />
+<img width="698" height="262" alt="image" src="https://github.com/user-attachments/assets/1ae04f1e-651e-4873-99a7-780c265fbf48" />
+
 
  
 
