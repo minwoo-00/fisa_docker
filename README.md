@@ -262,10 +262,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
 | 항목 | 결과 |
 |------|------|
-| 빌드 시간 | |
-| 이미지 크기 | |
+| 빌드 시간 | 5.7s |
+| 이미지 크기 | 674MB |
  
-<!-- 📷 빌드 시간 및 이미지 크기 캡처 이미지를 여기에 추가해 주세요 -->
+<img width="1211" height="593" alt="image" src="https://github.com/user-attachments/assets/c819ff21-458c-4ba3-9172-b6cd877b9a29" />
+<img width="1211" height="593" alt="image" src="https://github.com/user-attachments/assets/63d8f99f-5341-41f4-80dd-8b7c9f46784f" />
+
  
 ---
  
@@ -306,10 +308,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
 | 항목 | 결과 |
 |------|------|
-| 빌드 시간 | |
-| 이미지 크기 | |
+| 빌드 시간 | 217.6s |
+| 이미지 크기 | 411MB |
  
-<!-- 📷 빌드 시간 및 이미지 크기 캡처 이미지를 여기에 추가해 주세요 -->
+<img width="1200" height="310" alt="image" src="https://github.com/user-attachments/assets/88a6acd0-4eb3-48a0-a563-8d08afa0388b" />
+<img width="702" height="219" alt="image" src="https://github.com/user-attachments/assets/6e1508cc-7a65-4e16-8d6e-6de2316f1a21" />
+
  
 ---
  
@@ -360,10 +364,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
 | 항목 | 결과 |
 |------|------|
-| 빌드 시간 | |
-| 이미지 크기 | |
- 
-<!-- 📷 빌드 시간 및 이미지 크기 캡처 이미지를 여기에 추가해 주세요 -->
+| 빌드 시간 | 223.4s |
+| 이미지 크기 | 50.7MB |
+
+<img width="1207" height="352" alt="image" src="https://github.com/user-attachments/assets/64c9a12a-13f1-4398-86c8-c7a6cc42b99a" />
+<img width="720" height="226" alt="image" src="https://github.com/user-attachments/assets/acbdcc87-e026-49b7-9c91-f2361f7f6db4" />
+
  
 ---
  
@@ -407,10 +413,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
 | 항목 | 결과 |
 |------|------|
-| 빌드 시간 | |
-| 이미지 크기 | |
+| 빌드 시간 | 215s |
+| 이미지 크기 | 411MB |
  
-<!-- 📷 빌드 시간 및 이미지 크기 캡처 이미지를 여기에 추가해 주세요 -->
+<img width="1201" height="240" alt="image" src="https://github.com/user-attachments/assets/cccefd84-ee53-4778-8f67-e9e4bc1d43de" />
+<img width="694" height="261" alt="image" src="https://github.com/user-attachments/assets/c6515a8b-5dba-48f0-9ea3-ba3b42fae41e" />
+
  
 ---
  
@@ -468,11 +476,15 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
 | 항목 | 결과 |
 |------|------|
-| 첫 빌드 시간 | |
-| 소스 변경 후 재빌드 시간 | |
-| 이미지 크기 | |
+| 첫 빌드 시간 | 282.6s |
+| 소스 변경 후 재빌드 시간 | 6.0s |
+| 이미지 크기 | 411MB |
  
-<!-- 📷 빌드 시간 및 이미지 크기 캡처 이미지를 여기에 추가해 주세요 -->
+<img width="1205" height="289" alt="image" src="https://github.com/user-attachments/assets/1948a637-01a7-4630-8c5b-f1f9959d9a05" />
+<img width="1204" height="287" alt="image" src="https://github.com/user-attachments/assets/269275f5-25f6-451c-9bdb-bc34be40eaf5" />
+
+<img width="1205" height="289" alt="image" src="https://github.com/user-attachments/assets/0efe03ca-f5dc-479a-b600-5a97deb181ee" />
+
  
 
 ---
