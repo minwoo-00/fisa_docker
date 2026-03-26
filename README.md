@@ -88,7 +88,80 @@ BuildKit은 Docker의 기본 빌더로, **빌드 성능 개선과 외부 캐시 
 로컬, CI 서버 등 여러 환경에서 빌드 캐시를 공유해 매번 처음부터 빌드하지 않아도 됩니다.
 
 ---
+## 실습 🚀
 
-> ## 실습 🚀
-````
-````
+### Docker 베이스 이미지 최적화 실습
+
+### 실습 목적
+동일한 Spring Boot JAR 파일을 서로 다른 베이스 이미지로 빌드하여, 베이스 이미지 선택이 **최종 이미지 크기**와 **빌드 특성**에 어떤 영향을 미치는지 비교한다.
+
+---
+
+#### 1. 베이스 이미지 Pull
+
+```bash
+# 베이스 이미지 pull 예시 명령어
+docker pull ubuntu
+```
+
+##### 베이스 이미지 크기 비교
+
+| 이미지 | 디스크 크기 | 다운로드 크기 | 특징 |
+|--------|-----------|-------------|------|
+| alpine | 13.1MB | 3.95MB | 매우 가벼움, musl libc 기반 |
+| debian:bookworm-slim | 116MB | 30.6MB | 안정적, 불필요한 패키지 제거 |
+| ubuntu | 119MB | 31.7MB | 범용적이지만 무거움 |
+| distroless (java17) | 315MB | 82.5MB | 쉘 없음, Java 포함, 보안 최강 |
+| eclipse-temurin:17-jre | 377MB | 97.5MB | Java 실행 전용, JDK보다 가벼움 |
+
+---
+
+#### 2. Dockerfile 작성
+
+> 💡 베이스 이미지 부분(`FROM`)은 공란으로 두었습니다. 원하는 베이스 이미지를 넣어서 사용하세요.
+
+##### 기본 템플릿
+
+```dockerfile
+FROM _______________
+# 필요시 JDK 설치 명령어 추가
+COPY build/libs/step06_buildGradleTest-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+##### 베이스 이미지 Dockerfile
+
+```dockerfile
+# dockerfile 예시
+FROM ubuntu
+RUN apt-get update && apt-get install -y openjdk-17-jre-headless && rm -rf /var/lib/apt/lists/*
+COPY build/libs/step06_buildGradleTest-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+---
+
+#### 3. 이미지 빌드
+
+```bash
+# 이미지 빌드 예시 명령어
+docker build -f Dockerfile.ubuntu -t myapp:ubuntu .
+```
+
+---
+
+#### 4. 빌드 결과 비교
+
+| 이미지 | 베이스 크기 | 최종 크기 | 증가량 | 빌드 시간 | JDK 설치 방식 |
+|--------|-----------|----------|--------|-----------|--------------|
+| alpine | 13.1MB | 313MB | +300MB | 45.5s | apk add (9초) |
+| debian | 116MB | 527MB | +411MB | 121.7s | apt-get (73초) |
+| ubuntu | 119MB | 524MB | +405MB | 130.3s | apt-get (81초) |
+| distroless | 315MB | 353MB | +38MB | 19.2s | 사전 포함 |
+| temurin | 377MB | 411MB | +34MB | 8.2s | 사전 포함 |
+
+---
+
+#### 5. 결론
+
+> **베이스 이미지가 작다고 최종 이미지가 작은 것이 아니다.** JDK를 빌드 중에 설치하면 +300~400MB가 추가되지만, JDK가 사전 포함된 이미지(temurin, distroless)는 +34~38MB만 증가하며 빌드도 최대 16배 빠르다. 실무에서는 목적에 맞는 전용 이미지를 선택하는 것이 크기·속도·보안 모두에서 유리하다.
