@@ -90,7 +90,7 @@ BuildKit은 Docker의 기본 빌더로, **빌드 성능 개선과 외부 캐시 
 ---
 ## 실습 🚀
 
-### Docker 베이스 이미지 최적화 실습
+### 1️⃣ Docker 베이스 이미지 최적화 실습
 
 ### 실습 목적
 동일한 Spring Boot JAR 파일을 서로 다른 베이스 이미지로 빌드하여, 베이스 이미지 선택이 **최종 이미지 크기**와 **빌드 특성**에 어떤 영향을 미치는지 비교한다.
@@ -167,6 +167,103 @@ docker build -f Dockerfile.ubuntu -t myapp:ubuntu .
 > **베이스 이미지가 작다고 최종 이미지가 작은 것이 아니다.** JDK를 빌드 중에 설치하면 +300~400MB가 추가되지만, JDK가 사전 포함된 이미지(temurin, distroless)는 +34~38MB만 증가하며 빌드도 최대 16배 빠르다. 실무에서는 목적에 맞는 전용 이미지를 선택하는 것이 크기·속도·보안 모두에서 유리하다.
 
 ---
+
+---
+
+### 4️⃣레이어 구조 최적화 실습
+
+### 실습 목적
+Docker는 위에서 아래로 빌드하며, 변경된 레이어부터 아래를 전부 다시 빌드한다. 레이어 **순서**가 빌드 속도에, 레이어 **합치기**가 이미지 크기에 어떤 영향을 주는지 확인한다.
+
+---
+
+#### 1. 순서 최적화 (빌드 속도)
+
+```
+잘 안 바뀌는 것 (의존성, 설정) → 위에 배치 → 캐시 활용
+자주 바뀌는 것 (소스코드)     → 아래 배치 → 바뀐 부분만 재빌드
+```
+
+##### Dockerfile 비교
+
+**나쁜 예: JAR(자주 바뀜)가 위, 의존성 설치(무거움)가 아래**
+```dockerfile
+FROM ubuntu
+COPY build/libs/step06_buildGradleTest-0.0.1-SNAPSHOT.jar app.jar
+RUN apt-get update && apt-get install -y openjdk-17-jre-headless && rm -rf /var/lib/apt/lists/*
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+**좋은 예: 의존성 설치(무거움)가 위, JAR(자주 바뀜)가 아래**
+```dockerfile
+FROM ubuntu
+RUN apt-get update && apt-get install -y openjdk-17-jre-headless && rm -rf /var/lib/apt/lists/*
+COPY build/libs/step06_buildGradleTest-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+#### 재빌드 결과 (JAR 변경 후)
+
+| Dockerfile | 재빌드 시간 | apt-get 캐시 | 원인 |
+|-----------|-----------|-------------|------|
+| 나쁜 예 (JAR 위) | **2분 27초** | 다시 실행 | JAR가 바뀌면서 아래 apt-get도 재실행 |
+| 좋은 예 (JAR 아래) | **8.7초** | CACHED ✅ | apt-get은 캐시, JAR만 다시 COPY |
+
+> 순서만 바꿔도 재빌드 시간이 **약 17배** 차이난다.
+
+---
+
+### 2. 레이어 합치기 (이미지 크기 vs 캐시 효율)
+
+```
+파일을 추가한 뒤 같은 레이어에서 삭제하지 않으면
+이전 레이어에 이미 저장되어 있어 용량이 줄지 않는다.
+→ RUN 명령어를 &&로 이어서 하나의 레이어로 합쳐야 실제로 용량이 줄어든다.
+```
+
+### Dockerfile 비교
+
+**RUN 분리 (split)**
+```dockerfile
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install -y openjdk-17-jre-headless
+RUN rm -rf /var/lib/apt/lists/*
+COPY build/libs/step06_buildGradleTest-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+**RUN 합침 (merged)**
+```dockerfile
+FROM ubuntu
+RUN apt-get update && apt-get install -y openjdk-17-jre-headless && rm -rf /var/lib/apt/lists/*
+COPY build/libs/step06_buildGradleTest-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+#### 크기 비교
+
+| Dockerfile | 이미지 크기 | 차이 |
+|-----------|-----------|------|
+| split (RUN 분리) | 627MB | +103MB |
+| merged (RUN 합침) | 524MB | 기준 |
+
+> RUN을 분리하면 `rm -rf`가 별도 레이어라 이전 레이어에 apt 캐시가 남아서 103MB 더 크다.
+
+#### 캐시 효율 비교 (curl 패키지 추가 후 재빌드)
+
+| Dockerfile | 재빌드 시간 | 캐시 상태 |
+|-----------|-----------|----------|
+| split-v2 (RUN 분리) | **24.9초** | apt-get update, openjdk CACHED ✅ → curl만 설치 |
+| merged-v2 (RUN 합침) | **2분 24초** | RUN 한 줄이 바뀌어 전체 다시 실행 ❌ |
+
+> 분리하면 재빌드가 **약 6배 빠르다.**
+
+---
+
+#### 3. 결론
+
+> **레이어 합치기는 크기와 캐시 효율의 트레이드오프다.** 합치면 이미지가 103MB 작아지지만, 패키지 하나만 추가해도 전체 RUN을 다시 실행해야 한다(2분 24초). 분리하면 이미지는 커지지만 변경된 부분만 재빌드하여 6배 빠르다(24초). 실무에서는 **프로덕션 배포 시 합치고, 개발 중에는 분리**하는 전략이 유효하다.
 
 ## 실무 관점에서의 최적화
  
