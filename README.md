@@ -6,6 +6,14 @@
 
 ---
 
+## 👥 Contributors
+|       강민영       |       배기영       |       조민우       |
+| :-----------------: | :-----------------: | :----------------: |
+| [<img width="160px" src="https://github.com/minykang.png">](https://github.com/minykang) | [<img width="160px" src="https://github.com/bbky323.png">](https://github.com/bbky323) | [<img width="160px" src="https://github.com/minwoo-00.png">](https://github.com/minwoo-00) |
+| [@minykang](https://github.com/minykang) | [@bbky323](https://github.com/bbky323) | [@minwoo-00](https://github.com/minwoo-00) |
+
+---
+
 </br>
 
 ## 📌 이미지 최적화란?
@@ -88,7 +96,7 @@ BuildKit은 Docker의 기본 빌더로, **빌드 성능 개선과 외부 캐시 
 로컬, CI 서버 등 여러 환경에서 빌드 캐시를 공유해 매번 처음부터 빌드하지 않아도 된다.
 
 ---
-## 실습 🚀
+## [실습 🚀](./labs.md)
 
 ### 1️⃣ Docker 베이스 이미지 최적화 실습
 
@@ -505,7 +513,7 @@ BuildKit cache mount는 이번 실험에서 가장 뚜렷한 **반복 빌드 최
 ---
 
  
-## 3. 실무 시나리오 — WAS
+## [실무 시나리오 — WAS](./secnario.md)
  
 > Sping 기반의 간단한 웹 어플리케이션 서버를 예시로, 실무 관점에 맞춰서 단계별로 이미지를 개선해 나갑니다.
  
