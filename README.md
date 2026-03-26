@@ -501,30 +501,4 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
  
  
 ---
- 
-### 🔧 트러블슈팅
- 
-#### `gradlew: Permission denied`
-```
-RUN ./gradlew clean bootJar
-# → permission denied
-```
-→ `COPY` 이후 `RUN chmod +x gradlew`를 반드시 추가하거나, `RUN` 한 줄에 같이 묶을 것.
- 
-#### Gradle 의존성 다운로드가 매번 재실행됨
-→ `COPY . .` 이후 `./gradlew dependencies`를 실행하면 소스 변경 시마다 캐시가 무효화됨. `build.gradle`과 `settings.gradle`을 먼저 복사한 뒤 의존성 다운로드 레이어를 별도로 분리할 것.
- 
-#### Alpine JRE에서 JVM 관련 오류
-```
-Error: dl failure on line 893
-```
-→ `musl libc` 기반 Alpine에서 일부 JVM 네이티브 라이브러리 로딩 실패. `eclipse-temurin:17-jre`(Debian 기반)으로 교체.
- 
-#### `build/libs/`에 JAR 파일이 여러 개 생성됨
-→ Spring Boot Gradle 플러그인 설정에 따라 `-plain.jar`가 함께 생성될 수 있음. `bootJar` 태스크만 명시적으로 실행하거나, `build.gradle`에서 `jar { enabled = false }` 설정 추가.
- 
-#### `USER 1001` 설정 후 JAR 실행 오류
-→ `COPY` 시 파일 소유자를 함께 지정할 것.
-```dockerfile
-COPY --from=builder --chown=1001:1001 /build/build/libs/*.jar app.jar
-```
+
