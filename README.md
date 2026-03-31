@@ -15,12 +15,38 @@
 ---
 
 
-## [📌이미지 최적화 Overview](./overview.md)
+## 📌이미지 최적화 Overview
+
+- <a href="https://github.com/minwoo-00/fisa_docker/blob/main/overview.md" target="_blank" rel="noopener noreferrer">
+    이미지 최적화 Overview
+  </a>
+
+  - 이미지 최적화 개념
+  - 이미지 최적화 이유
+  - 이미지 최적화 방법
+
 
 ---
-## [🚀실습](./labs.md)
+## 🚀실습
+
+- <a href="https://github.com/minwoo-00/fisa_docker/blob/main/labs.md" target="_blank" rel="noopener noreferrer">
+    실습
+  </a>
+  
+  - 베이스 이미지 최적화
+  - 멀티 스테이지 빌드
+  - .dockerignore
+  - 레이어 구조 최적화
+  - BuildKit / 캐시 활용
+
 
 ---
 
-## [📕실무 시나리오](./scenario.md)
+## 📕실무 시나리오
+
+- <a href="https://github.com/minwoo-00/fisa_docker/blob/main/scenario.md" target="_blank" rel="noopener noreferrer">
+    실무 시나리오
+  </a>
+
+  - 실무 관점의 Spring 기반 간단한 웹 어플리케이션 서버 이용 시나리오
 
